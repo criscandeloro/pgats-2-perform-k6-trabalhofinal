@@ -29,7 +29,7 @@ Esta é uma API para um sistema de venda de ingressos para a exposição de Seba
 
  # Explicando os testes em K6:
 
- 3.  **Group:**
+ **Group:**
 
  É utilizada para organizar o script de teste em seções lógicas. No arquivo ticket.test.js foi utilizado três group para separar as principais ações do cenário de testes.  
 
