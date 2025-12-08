@@ -30,7 +30,6 @@ const tickets = new SharedArray('tickets', function () {
 
 export function setup() {
     const token = login();
-    console.log(token)
     return { token: token };
     
 }
