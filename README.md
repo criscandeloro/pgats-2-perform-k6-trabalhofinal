@@ -33,17 +33,19 @@ Esta é uma API para um sistema de venda de ingressos para a exposição de Seba
 
  É utilizada para organizar o script de teste em seções lógicas. No arquivo ticket.test.js foi utilizado três group para separar as principais ações do cenário de testes.  
 
-``` // Grupo 1: Simula o login do usuário
-``` group('Fazendo o login', () => {
-```    // ...
-```});
+ ```javascript
 
->// Grupo 2: Simula a compra de um ticket
->group('Comprando ticket', () => {
->    // ...
->});
+// Grupo 1: Simula o login do usuário
+group('Fazendo o login', () => {
+    // ...
+});
 
->// Grupo 2: Simula a busca pelas vendas
->group('Comprando ticket', () => {
->    // ...
->});
+// Grupo 2: Simula a compra de um ticket
+group('Comprando ticket', () => {
+    // ...
+});
+
+// Grupo 2: Simula a busca pelas vendas
+group('Comprando ticket', () => {
+    // ...
+});
