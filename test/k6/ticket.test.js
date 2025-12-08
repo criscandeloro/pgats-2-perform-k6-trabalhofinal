@@ -1,79 +1,81 @@
-
-
 import http from 'k6/http';
-import { sleep, group, check } from 'k6';
+import { check, group, sleep } from 'k6';
+import { Trend } from 'k6/metrics';
+import { getBaseUrl } from './helpers/getBaseUrl.js';
+import { login } from './helpers/login.js';
+//import faker from "k6/x/faker"
+import { SharedArray } from 'k6/data';
 
-export const options = {
-  vus: 10,
-  iterations: 10,
-  //duration: '10s',
-   thresholds: {
-      'http_req_duration': ['p(90)<=2000'],
-      'http_req_failed': ['rate<0.01']
-    }
+export let options = {
+    thresholds: {
+        'http_req_duration': ['p(95)<2000'], // 95% das requests devem ser < 2s
+        'checks{group:::Comprando ticket}': ['rate>0.99'], // Mais de 99% dos checks devem passar
+        'checks{group:::Validando ticket}': ['rate>0.99'], // Mais de 99% dos checks devem passar
+    },
+    stages: [
+        { duration: '3s', target: 10 }, // Ramp up
+        { duration: '15s', target: 10 }, // Average
+        { duration: '2s', target: 100 }, // Spike
+        { duration: '3s', target: 100 }, // Spike
+        { duration: '5s', target: 10 }, // Average
+        { duration: '5s', target: 0 }, // Ramp down
+    ],
 };
 
-export default function () {
- let responseLogin = '';
+const ticketsTrend = new Trend('tickets_duration');
 
-  group('Fazendo o login', () => {
-    responseLogin = http.post(
-      'http://localhost:3000/login',
-      JSON.stringify({
-            username: "admin",
-            password: "password123"
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    check(responseLogin, {
-      "Login: status deve ser igual a 200": (r) => r.status === 200
-    });
-  });
+const tickets = new SharedArray('tickets', function () {
+    return JSON.parse(open('./data/ticket.test.data.json'));
+})
 
-   group('Comprando ticket', () => {
-    let responseTicket = http.post(
-      'http://localhost:3000/sales',
-      JSON.stringify({
-        quantity: 1,
-        age: 25,
-        totalValue: 150
-      }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${responseLogin.json('token')}`
-        }
-      }
-    );
-
-       check(responseTicket, {
-      "Comprando Ticket: status deve ser igual a 201": (r) => r.status === 201
-     }); 
-    });
-
- group('Buscando os tickets vendidos', () => {
-    let responseGetTicket = http.get(
-      'http://localhost:3000/sales',
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${responseLogin.json('token')}`
-        }
-      }
-    );
-
-       check(responseGetTicket, {
-      "Buscando Tickets: status deve ser igual a 200 para buscar os tickets vendidos": (r) => r.status === 200
-     }); 
-    });    
-
-  group('Simulando o Think Time', () => {
-    sleep(1); // User Think Time
-  });
+export function setup() {
+    const token = login();
+    return { token: token };
 }
 
+export default function (data) {
+  let res,headers,payload;
 
+    group('Comprando ticket', () => {
+        const ticketData = tickets[(__VU - 1) % tickets.length];
+       // const age = faker.randInt(18, 99);
+        payload = {
+            quantity: ticketData.quantity,
+            age: ticketData.age,
+            totalValue: ticketData.totalValue
+        }
+
+        headers = {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${data.token}`
+            }
+        };
+
+        res = http.post(
+            `${getBaseUrl()}/sales`,
+            JSON.stringify(payload),
+            headers
+        );
+
+        check(res, { 'Compra de ticket: status deve ser igual a 201': (r) => r.status === 201 });
+        ticketsTrend.add(res.timings.duration); // Adicionando a duração à métrica de tendência
+
+        sleep(1);
+    });
+  
+      group('Validando ticket', () => {
+        if (res) {
+            const createdTicket = res.json();
+            if (createdTicket && createdTicket.id) {
+                const ticketId = createdTicket.id;
+                const getRes = http.get(`${getBaseUrl()}/sales/${ticketId}`, headers);
+
+                check(getRes, { 'Busca de ticket: status deve ser 200': (r) => r.status === 200 });
+                ticketsTrend.add(getRes.timings.duration);
+            }
+        }
+
+        sleep(1);
+    });
+}

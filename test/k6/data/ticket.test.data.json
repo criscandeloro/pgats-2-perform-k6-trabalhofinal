@@ -1,0 +1,17 @@
+[
+  {
+    "quantity": 1,
+    "age": 20,
+    "totalValue": 120
+  },
+  {
+    "quantity": 2,
+    "age": 30,
+    "totalValue": 240
+  },
+  {
+    "quantity": 1,
+    "age": 40,
+    "totalValue": 150
+  }
+]

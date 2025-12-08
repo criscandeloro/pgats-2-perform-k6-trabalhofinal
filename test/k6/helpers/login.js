@@ -1,0 +1,13 @@
+import http from 'k6/http';
+import { check } from 'k6';
+import { getBaseUrl } from './getBaseUrl.js';
+
+export function login() {
+    const url = `${getBaseUrl()}/login`;
+    const payload = JSON.stringify({username: "admin", password: "password123"});
+    const params = { headers: { 'Content-Type': 'application/json' } };
+    const res = http.post(url, payload, params);
+    check(res, { 'login status 200': (r) => r.status === 200 });
+    const token = res.json('token');
+    return token;
+}
