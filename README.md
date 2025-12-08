@@ -8,7 +8,7 @@ Esta é uma API para um sistema de venda de ingressos para a exposição de Seba
 
 *   **Autenticação**: Acesso seguro com tokens JWT.
 *   **Venda de Ingressos**: Endpoint para registrar a venda de ingressos.
-*   **Listagem de Vendas**: Endpoint para visualizar todas as vendas registradas.
+*   **Listagem de Vendas**: Endpoint para visualizar todas as vendas registradas ou uma venda específica.
 
 ## Pré-requisitos
 
@@ -55,6 +55,100 @@ k6 run test/k6/ticket.test.js
 
 O script de teste em `test/k6/ticket.test.js` utiliza conceitos importantes do k6 para simular o comportamento do usuário e validar a performance da API.
 
+#### **Thresholds**
+
+Thresholds são os critérios de aprovação do teste. Eles definem as metas que as métricas de performance (como duração da requisição ou taxa de falha) devem atingir.
+
+```javascript
+// Exemplo de Thresholds no script
+export const options = {
+  // ...
+  thresholds: {
+    'http_req_duration': ['p(90)<=2000'], // 90% das requisições devem completar em até 2000ms
+    'http_req_failed': ['rate<0.01']      // A taxa de falhas deve ser menor que 1%
+  }
+};
+```
+#### **Checks**
+
+Checks são asserções usadas para verificar se a resposta de uma requisição atende a determinados critérios (ex: status code).
+
+```javascript
+// Exemplo de Checks no script
+check(responseTicket, {
+  "status deve ser igual a 201": (r) => r.status === 201
+});
+
+check(responseGetTicket, {
+  "status deve ser igual a 200 para buscar os tickets vendidos": (r) => r.status === 200
+});
+```
+
+#### **Helpers**
+
+Helpers são para reutlização de códigos e melhor organização do projeto. No arquivo de ticket.test.js usamos para a base url e login. 
+
+```javascript
+// Exemplo de Helpers no script
+  import { getBaseUrl } from './helpers/getBaseUrl.js';
+  import { login } from './helpers/login.js';
+```
+
+#### **Trends**
+
+Trends são métricas customizadas de tempo usada para medir a duração de eventos específicas do negócio.
+Abaixo mostra as métricas customizadas: compra do ticket e a validação do ticket.
+
+
+```javascript
+  const ticketsTrend = new Trend('tickets_duration');
+  ticketsTrend.add(res.timings.duration); //compra do ticket
+  ticketsTrend.add(getRes.timings.duration); //validação do ticket
+```
+
+#### **Faker**
+
+Faker é uma biblioteca usada para geração de dados fictícios (dados falsos) de forma dinâmica durante a realização dos testes.
+Abaixo mostra a utlização da biblioteca no script de teste:
+
+
+```javascript
+  import { Faker } from "k6/x/faker";
+
+  const faker = new Faker(11);
+  const age = faker.numbers.intRange(18, 99);
+```
+
+
+#### **Variável de Ambiente**
+
+Variável de Ambiente é um valor configurável fora do código fonte , utilizado para alterar o comportamento da aplicação sem precisar modificar o código.
+A URL base da API é definida através de uma variável de ambiente, acessada via helper:
+
+
+```javascript
+  return __ENV.BASE_URL || 'http://localhost:3000';
+
+```
+
+No script de testes é importada e usada esta variável de ambiente:
+
+```javascript
+import { getBaseUrl } from './helpers/getBaseUrl.js';
+
+`${getBaseUrl()}/sales`
+
+```
+
+#### **Stages**
+
+
+#### **Reaproveitamento de Resposta**
+
+#### **Uso de token de Autenticação**
+
+#### **Data-Driven Testing**
+
 #### **Groups**
 
 Grupos são usados para organizar o script de teste em seções lógicas, representando diferentes ações do usuário.
@@ -78,32 +172,3 @@ group('Buscando tickets', () => {
 });
 ```
 
-#### **Checks**
-
-Checks são asserções usadas para verificar se a resposta de uma requisição atende a determinados critérios (ex: status code).
-
-```javascript
-// Exemplo de Checks no script
-check(responseTicket, {
-  "status deve ser igual a 201": (r) => r.status === 201
-});
-
-check(responseGetTicket, {
-  "status deve ser igual a 200 para buscar os tickets vendidos": (r) => r.status === 200
-});
-```
-
-#### **Thresholds**
-
-Thresholds são os critérios de aprovação do teste. Eles definem as metas que as métricas de performance (como duração da requisição ou taxa de falha) devem atingir.
-
-```javascript
-// Exemplo de Thresholds no script
-export const options = {
-  // ...
-  thresholds: {
-    'http_req_duration': ['p(90)<=2000'], // 90% das requisições devem completar em até 2000ms
-    'http_req_failed': ['rate<0.01']      // A taxa de falhas deve ser menor que 1%
-  }
-};
-```
