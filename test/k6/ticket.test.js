@@ -41,10 +41,11 @@ export default function (data) {
 
     group('Comprando ticket', () => {
         const ticketData = tickets[(__VU - 1) % tickets.length];
-        const age = faker.intRange(18, 99);
+        const age = 
+        console.log('Testando o faker', faker.numbers.intRange(18, 99))
         payload = {
             quantity: ticketData.quantity,
-            age: age,
+            age: ticketData.age,
             totalValue: ticketData.totalValue
         }
 
