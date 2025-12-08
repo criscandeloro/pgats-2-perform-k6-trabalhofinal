@@ -3,7 +3,7 @@ import { check, group, sleep } from 'k6';
 import { Trend } from 'k6/metrics';
 import { getBaseUrl } from './helpers/getBaseUrl.js';
 import { login } from './helpers/login.js';
-//import faker from "k6/x/faker"
+import { Faker } from "k6/x/faker"
 import { SharedArray } from 'k6/data';
 
 export let options = {
@@ -37,13 +37,14 @@ export function setup() {
 
 export default function (data) {
   let res,headers,payload;
+  const faker = new Faker(11)
 
     group('Comprando ticket', () => {
         const ticketData = tickets[(__VU - 1) % tickets.length];
-       // const age = faker.randInt(18, 99);
+        const age = faker.intRange(18, 99);
         payload = {
             quantity: ticketData.quantity,
-            age: ticketData.age,
+            age: age,
             totalValue: ticketData.totalValue
         }
 
@@ -62,7 +63,6 @@ export default function (data) {
 
         check(res, { 'Compra de ticket: status deve ser igual a 201': (r) => r.status === 201 });
         ticketsTrend.add(res.timings.duration); // Adicionando a duração à métrica de tendência
-        console.log(res)
 
         sleep(1);
     });
