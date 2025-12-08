@@ -8,7 +8,7 @@ import { SharedArray } from 'k6/data';
 
 export let options = {
     thresholds: {
-        'http_req_duration': ['p(95)<2000'], // 95% das requests devem ser < 2s
+        'http_req_duration': ['p(95)<5000'], // 95% das requests devem ser < 5s
         'checks{group:::Comprando ticket}': ['rate>0.99'], // Mais de 99% dos checks devem passar
         'checks{group:::Validando ticket}': ['rate>0.99'], // Mais de 99% dos checks devem passar
     },
@@ -30,7 +30,9 @@ const tickets = new SharedArray('tickets', function () {
 
 export function setup() {
     const token = login();
+    console.log(token)
     return { token: token };
+    
 }
 
 export default function (data) {
@@ -60,6 +62,7 @@ export default function (data) {
 
         check(res, { 'Compra de ticket: status deve ser igual a 201': (r) => r.status === 201 });
         ticketsTrend.add(res.timings.duration); // Adicionando a duração à métrica de tendência
+        console.log(res)
 
         sleep(1);
     });

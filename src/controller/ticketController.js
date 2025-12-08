@@ -81,4 +81,49 @@ router.get('/sales', authMiddleware, (req, res) => {
     res.status(200).json(sales);
 });
 
+/**
+ * @swagger
+ * /sales/{ticket}:
+ *   get:
+ *     summary: Busca uma venda pelo número do ticket
+ *     tags: [Tickets]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ticket
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Número do ticket da venda
+ *     responses:
+ *       200:
+ *         description: Venda encontrada com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       404:
+ *         description: Venda não encontrada
+ *       401:
+ *         description: Unauthorized
+ */
+
+router.get('/sales/:id', authMiddleware, (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const sale = ticketService.getSaleById(id);
+
+        if (!sale) {
+            return res.status(404).json({ message: 'Venda não encontrada para este ticket' });
+        }
+
+        res.status(200).json(sale);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
+
 module.exports = router;

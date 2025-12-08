@@ -28,6 +28,11 @@ class TicketService {
     getSales() {
         return sales;
     }
+
+   getSaleById(id) {
+    return sales.find(sale => sale.id === Number(id));
+    }
 }
+
 
 module.exports = new TicketService();
