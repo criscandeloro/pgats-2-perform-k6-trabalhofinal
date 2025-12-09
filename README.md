@@ -53,11 +53,11 @@ k6 run test/k6/ticket.test.js
 
 ### Entendendo o Script de Teste do k6
 
-O script de teste em `test/k6/ticket.test.js` utiliza conceitos importantes do k6 para simular o comportamento do usuário e validar a performance da API.
+  O script de teste em `test/k6/ticket.test.js` utiliza conceitos importantes do k6 para simular o comportamento do usuário e validar a performance da API.
 
 #### **Thresholds**
 
-Thresholds são os critérios de aprovação do teste. Eles definem as metas que as métricas de performance (como duração da requisição ou taxa de falha) devem atingir.
+  Thresholds são os critérios de aprovação do teste. Eles definem as metas que as métricas de performance (como duração da requisição ou taxa de falha) devem atingir.
 
 ```javascript
 // Exemplo de Thresholds no script
@@ -71,7 +71,7 @@ export const options = {
 ```
 #### **Checks**
 
-Checks são asserções usadas para verificar se a resposta de uma requisição atende a determinados critérios (ex: status code).
+  Checks são asserções usadas para verificar se a resposta de uma requisição atende a determinados critérios (ex: status code).
 
 ```javascript
 // Exemplo de Checks no script
@@ -86,7 +86,7 @@ check(responseGetTicket, {
 
 #### **Helpers**
 
-Helpers são para reutlização de códigos e melhor organização do projeto. No arquivo de ticket.test.js usamos para a base url e login. 
+  Helpers são para reutlização de códigos e melhor organização do projeto. No arquivo de ticket.test.js usamos para a base url e login. 
 
 ```javascript
 // Exemplo de Helpers no script
@@ -96,8 +96,8 @@ Helpers são para reutlização de códigos e melhor organização do projeto. N
 
 #### **Trends**
 
-Trends são métricas customizadas de tempo usada para medir a duração de eventos específicas do negócio.
-Abaixo mostra as métricas customizadas: compra do ticket e a validação do ticket.
+  Trends são métricas customizadas de tempo usada para medir a duração de eventos específicas do negócio.
+  Abaixo mostra as métricas customizadas: compra do ticket e a validação do ticket.
 
 
 ```javascript
@@ -108,8 +108,8 @@ Abaixo mostra as métricas customizadas: compra do ticket e a validação do tic
 
 #### **Faker**
 
-Faker é uma biblioteca usada para geração de dados fictícios (dados falsos) de forma dinâmica durante a realização dos testes.
-Abaixo mostra a utlização da biblioteca no script de teste:
+  Faker é uma biblioteca usada para geração de dados fictícios (dados falsos) de forma dinâmica durante a realização dos testes.
+  Abaixo mostra a utlização da biblioteca no script de teste:
 
 
 ```javascript
@@ -122,8 +122,8 @@ Abaixo mostra a utlização da biblioteca no script de teste:
 
 #### **Variável de Ambiente**
 
-Variável de Ambiente é um valor configurável fora do código fonte , utilizado para alterar o comportamento da aplicação sem precisar modificar o código.
-A URL base da API é definida através de uma variável de ambiente, acessada via helper:
+  Variável de Ambiente é um valor configurável fora do código fonte , utilizado para alterar o comportamento da aplicação sem precisar modificar o código.
+  A URL base da API é definida através de uma variável de ambiente, acessada via helper:
 
 
 ```javascript
@@ -142,12 +142,59 @@ import { getBaseUrl } from './helpers/getBaseUrl.js';
 
 #### **Stages**
 
+  Stages são as etapas de carga do teste, quantos usuários e por quanto tempo. Exemplo: começa com poucos usuários, aumenta aos poucos, depois diminui.
+  No script de teste, foram montados os seguintes stages:
+
+```javascript
+  stages: [
+        { duration: '3s', target: 10 }, // Ramp up
+        { duration: '15s', target: 10 }, // Average
+        { duration: '2s', target: 100 }, // Spike
+        { duration: '3s', target: 100 }, // Spike
+        { duration: '5s', target: 10 }, // Average
+        { duration: '5s', target: 0 }, // Ramp down
+    ],
+```    
 
 #### **Reaproveitamento de Resposta**
 
+Reaproveitamento de Resposta significa usar uma resposta de uma requisição em outra
+No script de teste, a validação do ticket depende do ticket retornado no momento da compra, sendo reutilizado na etapa de verificação.
+
+```javascript
+
+ group('Validando ticket', () => {
+        if (res) {
+            const createdTicket = res.json();
+``` 
+
+
 #### **Uso de token de Autenticação**
 
+  É quando usa um código de segurança (token) para provar que o usuário está logado. Exemplo: O usuário
+  faz o login, o sistema devolve o token e este token é enviado para as próximas requisições para liberar
+  o acesso. Se o token não for retornado o acesso é bloqueado.
+  No script de teste, para efetuar a compra do ticket e validação do ticket é necessário o token.
+
+ ```javascript 
+        headers = {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${data.token}`
+            }
+        };
+```
+
 #### **Data-Driven Testing**
+
+É quando o teste roda com vários dados diferentes, automaticamente. O mesmo teste é rodado várias vezes,
+mudando somente os dados. Exemplo: Vários usuários, várias compras de tickets com quantidades diferentes.
+No script de teste, foi usado para a compra dos tickets, usando a biblioteca ShareArray do K6.
+
+```javascript 
+const tickets = new SharedArray('tickets', function () {
+    return JSON.parse(open('./data/ticket.test.data.json'));
+```
 
 #### **Groups**
 
