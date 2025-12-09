@@ -1,4 +1,5 @@
-# pgats-2-perform-k6-trabalhofinal
+# Trabalho Final da Disciplina Automação de Testes de Performance
+# Aluna: Cristine Candeloro
 
 ## Descrição
 
