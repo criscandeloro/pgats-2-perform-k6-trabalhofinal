@@ -62,12 +62,12 @@ k6 run test/k6/ticket.test.js
 ```javascript
 // Exemplo de Thresholds no script
 export const options = {
-  // ...
+  //...
   thresholds: {
-    'http_req_duration': ['p(90)<=2000'], // 90% das requisições devem completar em até 2000ms
-    'http_req_failed': ['rate<0.01']      // A taxa de falhas deve ser menor que 1%
-  }
-};
+        'http_req_duration': ['p(95)<5000'], // 95% das requests devem ser < 5s
+        'checks{group:::Comprando ticket}': ['rate>0.99'], // Mais de 99% dos checks devem passar
+        'checks{group:::Validando ticket}': ['rate>0.99'], // Mais de 99% dos checks devem passar
+    },
 ```
 #### **Checks**
 
@@ -127,7 +127,7 @@ check(responseGetTicket, {
 
 
 ```javascript
-  return __ENV.BASE_URL || 'http://localhost:3000';
+  return __ENV.BASE_URL || 'http://localhost:3000'; //arquivo getBaseUrl.js
 
 ```
 
@@ -162,10 +162,8 @@ Reaproveitamento de Resposta significa usar uma resposta de uma requisição em 
 No script de teste, a validação do ticket depende do ticket retornado no momento da compra, sendo reutilizado na etapa de verificação.
 
 ```javascript
-
- group('Validando ticket', () => {
-        if (res) {
-            const createdTicket = res.json();
+const createdTicket = res.json();
+const ticketId = createdTicket.id;
 ``` 
 
 
@@ -177,12 +175,10 @@ No script de teste, a validação do ticket depende do ticket retornado no momen
   No script de teste, para efetuar a compra do ticket e validação do ticket é necessário o token.
 
  ```javascript 
-        headers = {
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${data.token}`
-            }
-        };
+  export function setup() {
+    const token = login();
+    return { token: token };
+  }
 ```
 
 #### **Data-Driven Testing**
@@ -195,26 +191,26 @@ No script de teste, foi usado para a compra dos tickets, usando a biblioteca Sha
 const tickets = new SharedArray('tickets', function () {
     return JSON.parse(open('./data/ticket.test.data.json'));
 ```
+E consome os dados no script:
+```javascript 
+const ticketData = tickets[(__VU - 1) % tickets.length];
+```
 
 #### **Groups**
 
 Grupos são usados para organizar o script de teste em seções lógicas, representando diferentes ações do usuário.
 
-*   **`Fazendo o login`**: Simula o processo de autenticação de um usuário.
 *   **`Comprando ticket`**: Simula a compra de um ingresso.
 *   **`Buscando tickets`**: Simula a busca por ingressos vendidos.
 
 ```javascript
 // Exemplo de Groups no script
-group('Fazendo o login', () => {
-    // ... lógica do login
-});
 
 group('Comprando ticket', () => {
     // ... lógica da compra
 });
 
-group('Buscando tickets', () => {
+group('Validando o ticket', () => {
     // ... lógica da busca
 });
 ```
