@@ -51,6 +51,12 @@ Para executar os testes de performance, utilize o seguinte comando:
 ```bash
 k6 run test/k6/ticket.test.js
 ```
+Se precisar rodar os testes gerando o relatório, utilize o seguinte comando:
+
+```bash
+K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=reports/ticket-test-dashboard.html k6 run test/k6/ticket.test.js
+
+```
 
 ### Entendendo o Script de Teste do k6
 
